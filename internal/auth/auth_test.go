@@ -8,30 +8,41 @@ import (
 )
 
 func TestAuth_StartRequiresDB(t *testing.T) {
-	// Setup
-	database := db.New(db.Config{URL: "memskip"})
+	// Setup components
+	database := db.New(db.Config{URL: "mem"})
 	authSvc := New(database)
 
-	// 1. Attempt to start Auth while DB is Stopped
-	// This should fail according to our logic in auth.go
-	err := authSvc.Start()
-	if err == nil {
-		t.Error("Expected error when starting Auth without a running DB, got nil")
+	// 1. Test: Auth should fail to start if DB is stopped
+	if err := authSvc.Start(); err == nil {
+		t.Error("expected error when starting Auth without a running DB, got nil")
 	}
 
-	// 2. Start DB and check the error
+	// 2. Test: Start DB correctly
 	if err := database.Start(); err != nil {
-		t.Fatalf("Setup failed: could not start database for test: %v", err)
+		t.Fatalf("setup failed: could not start database: %v", err)
 	}
 
-	// 3. Try to start Auth again
-	err = authSvc.Start()
-	if err != nil {
-		t.Errorf("Expected Auth to start successfully once DB is running, got: %v", err)
+	// Defer DB cleanup
+	defer func() {
+		if err := database.Stop(); err != nil {
+			t.Logf("db cleanup warning: %v", err)
+		}
+	}()
+
+	// 3. Test: Auth should now start successfully
+	if err := authSvc.Start(); err != nil {
+		t.Errorf("expected Auth to start, got error: %v", err)
 	}
 
-	// 4. Final state verification
+	// Defer Auth cleanup
+	defer func() {
+		if err := authSvc.Stop(); err != nil {
+			t.Logf("auth cleanup warning: %v", err)
+		}
+	}()
+
+	// 4. Verify final state using the lifecycle import
 	if authSvc.Status() != lifecycle.Running {
-		t.Errorf("Expected Auth state to be Running, got %v", authSvc.Status())
+		t.Errorf("expected auth state %v, got %v", lifecycle.Running, authSvc.Status())
 	}
 }

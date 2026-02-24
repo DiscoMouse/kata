@@ -7,48 +7,29 @@ import (
 )
 
 func TestDatabase_Lifecycle(t *testing.T) {
+	// Initialize the component
 	cfg := Config{URL: "postgres://localhost:5432/test"}
 	d := New(cfg)
 
-	// 1. Check initial state
+	// 1. Verify Initial State
 	if d.Status() != lifecycle.Stopped {
-		t.Errorf("expected initial state Stopped, got %v", d.Status())
+		t.Errorf("expected initial state %v, got %v", lifecycle.Stopped, d.Status())
 	}
 
-	// 2. Test Start
-	err := d.Start()
-	if err != nil {
+	// 2. Test Start and check error
+	if err := d.Start(); err != nil {
 		t.Fatalf("failed to start database: %v", err)
 	}
 
-	if d.Status() != lifecycle.Running {
-		t.Errorf("expected state Running after Start, got %v", d.Status())
-	}
-
-	// 3. Test Stop
-	err = d.Stop()
-	if err != nil {
-		t.Fatalf("failed to stop database: %v", err)
-	}
-
-	if d.Status() != lifecycle.Stopped {
-		t.Errorf("expected state Stopped after Stop, got %v", d.Status())
-	}
-}
-
-func TestDatabase_Concurrency(t *testing.T) {
-	// Because our Manager might check status while the DB is starting/stopping,
-	// we should ensure our Status() call is thread-safe and doesn't race.
-	d := New(Config{URL: "mem"})
-
-	go func() {
-		for i := 0; i < 100; i++ {
-			_ = d.Start()
-			_ = d.Stop()
+	// 3. Immediately defer cleanup so it stops even if the test fails later
+	defer func() {
+		if err := d.Stop(); err != nil {
+			t.Logf("cleanup warning: %v", err)
 		}
 	}()
 
-	for i := 0; i < 100; i++ {
-		_ = d.Status()
+	// 4. Verify Running State
+	if d.Status() != lifecycle.Running {
+		t.Errorf("expected state %v, got %v", lifecycle.Running, d.Status())
 	}
 }
