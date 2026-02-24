@@ -1,0 +1,3 @@
+## Kata 
+
+is a Japanese word (型 or 形) meaning 'form'. It refers to a detailed choreographed pattern of martial arts movements. It can also be reviewed within groups and in unison when training. It is practiced in Japanese martial arts as a way to memorize and perfect the movements being executed. Korean martial arts with Japanese influence (hapkido, Tang Soo Do) use the derived term hyeong (hanja: 形) and also the term pumsae (hanja: 品勢 hangeul: 품새).
